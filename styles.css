@@ -204,10 +204,65 @@ main {
     max-width: 460px;
 }
 
+.case-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin: 1.5rem 0 2rem;
+}
+
+.filter-btn {
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-muted);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 0.45rem 1.2rem;
+    cursor: pointer;
+    transition: background var(--transition), color var(--transition), border-color var(--transition), transform var(--transition), box-shadow var(--transition);
+}
+
+.filter-btn:hover {
+    color: var(--text-main);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+.filter-btn.active {
+    background: linear-gradient(135deg, rgba(255, 180, 0, 0.4), rgba(136, 71, 255, 0.35));
+    color: #120a1f;
+    border-color: rgba(255, 180, 0, 0.45);
+    box-shadow: 0 14px 24px rgba(255, 180, 0, 0.25);
+}
+
 .case-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 1.5rem;
+}
+
+.case-grid.empty {
+    grid-template-columns: 1fr;
+    place-items: center;
+}
+
+.case-grid.empty .empty-cases {
+    text-align: center;
+    padding: 2.5rem;
+    border-radius: 1.5rem;
+    background: var(--bg-elevated);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.35);
+}
+
+.case-grid.empty .empty-cases h3 {
+    margin-bottom: 0.75rem;
+}
+
+.case-grid.empty .empty-cases p {
+    margin: 0;
+    color: var(--text-muted);
 }
 
 .case-card {
@@ -224,14 +279,33 @@ main {
     gap: 1rem;
 }
 
+.case-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.case-header h3 {
+    margin: 0;
+    font-size: 1.35rem;
+    flex: 1;
+}
+
+.case-category {
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+}
+
 .case-card:hover {
     transform: translateY(-6px);
     box-shadow: 0 22px 38px rgba(0, 0, 0, 0.35);
-}
-
-.case-card h3 {
-    margin: 0;
-    font-size: 1.35rem;
 }
 
 .case-card .case-meta {
@@ -436,6 +510,91 @@ main {
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 28px 60px rgba(0, 0, 0, 0.45);
     position: relative;
+}
+
+.modal.deposit .modal-content {
+    width: min(420px, 90vw);
+    max-height: none;
+    padding: 2.25rem 2.5rem;
+}
+
+.deposit-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+}
+
+.deposit-header h3 {
+    margin: 0;
+}
+
+.deposit-header p {
+    margin: 0.5rem 0 0;
+    color: var(--text-muted);
+}
+
+.deposit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.deposit-form label {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.deposit-input-group {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: var(--bg-accent);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 1rem;
+    padding: 0.85rem 1.1rem;
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.deposit-input-group span {
+    color: var(--text-muted);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
+.deposit-input-group input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--text-main);
+    font-size: 1.2rem;
+    font-weight: 600;
+    outline: none;
+}
+
+.deposit-input-group input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.deposit-input-group.has-error {
+    border-color: rgba(231, 76, 60, 0.65);
+    box-shadow: 0 0 0 1px rgba(231, 76, 60, 0.35);
+}
+
+.form-error {
+    min-height: 1.2rem;
+    color: var(--danger);
+    font-size: 0.85rem;
+    margin: -0.25rem 0 0.5rem;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.modal-actions .btn {
+    flex: 1;
 }
 
 .modal-close {

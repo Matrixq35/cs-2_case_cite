@@ -52,6 +52,15 @@
                 <h2>Кейсы</h2>
                 <p>Выбирай из уникальных коллекций с тщательно настроенными шансами.</p>
             </div>
+            <div class="case-filters" role="group" aria-label="Категории кейсов">
+                <button class="filter-btn active" data-filter="all">Все</button>
+                <button class="filter-btn" data-filter="featured">Топ</button>
+                <button class="filter-btn" data-filter="premium">Премиум</button>
+                <button class="filter-btn" data-filter="awp">AWP</button>
+                <button class="filter-btn" data-filter="pistol">Пистолеты</button>
+                <button class="filter-btn" data-filter="farm">Фарм</button>
+                <button class="filter-btn" data-filter="budget">Бюджет</button>
+            </div>
             <div id="caseList" class="case-grid"></div>
         </section>
 
@@ -128,6 +137,30 @@
                 <h4>Содержимое кейса</h4>
                 <div id="caseSkinsGrid" class="skins-grid"></div>
             </div>
+        </div>
+    </div>
+
+    <div id="depositModal" class="modal deposit hidden" aria-hidden="true">
+        <div class="modal-content">
+            <button class="modal-close" id="closeDeposit" aria-label="Закрыть">×</button>
+            <div class="modal-header deposit-header">
+                <div>
+                    <h3>Пополнение баланса</h3>
+                    <p>Введите сумму пополнения, чтобы открыть ещё больше кейсов.</p>
+                </div>
+            </div>
+            <form id="depositForm" class="deposit-form" novalidate>
+                <label for="depositAmount">Сумма пополнения (USD)</label>
+                <div class="deposit-input-group">
+                    <span>$</span>
+                    <input id="depositAmount" name="depositAmount" type="number" min="1" max="10000" step="0.01" inputmode="decimal" placeholder="50" required>
+                </div>
+                <p id="depositError" class="form-error" role="alert" aria-live="assertive"></p>
+                <div class="modal-actions">
+                    <button type="submit" class="btn primary">Пополнить</button>
+                    <button type="button" class="btn outline" id="depositCancel">Отмена</button>
+                </div>
+            </form>
         </div>
     </div>
 

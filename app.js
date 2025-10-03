@@ -8,6 +8,15 @@ const rarityConfig = {
     legendary: { label: 'Exceedingly Rare', className: 'rarity-legendary', labelClass: 'rarity-label-legendary', weight: 0.1 }
 };
 
+const categoryLabels = {
+    featured: 'Топ выбор',
+    premium: 'Премиум',
+    awp: 'AWP',
+    pistol: 'Пистолеты',
+    farm: 'Фарм',
+    budget: 'Бюджет'
+};
+
 const IMAGE_BASE_URL = 'https://steamcommunity.com/economy/image/item/730/';
 const FALLBACK_IMAGE = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMDAgMjAwJz48cmVjdCB3aWR0aD0nMjAwJyBoZWlnaHQ9JzIwMCcgZmlsbD0nIzExMTgyNycvPjx0ZXh0IHg9JzUwJScgeT0nNTAlJyBmaWxsPScjOWNhM2FmJyBmb250LWZhbWlseT0nUm9ib3RvLEFyaWFsLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMjQnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGRvbWluYW50LWJhc2VsaW5lPSdtaWRkbGUnPk5PIElNQUdFPC90ZXh0Pjwvc3ZnPg==';
 
@@ -47,6 +56,7 @@ const rawCases = [
         id: 'phoenix-pro',
         name: 'Пламя Феникса',
         price: 6.49,
+        category: 'featured',
         description: 'Сбалансированный набор ярких AR и AWP скинов с шансом на редчайшие дропы.',
         showcase: [
             { name: 'AK-47 | Asiimov', wear: 'Field-Tested' },
@@ -72,6 +82,7 @@ const rawCases = [
         id: 'night-operation',
         name: 'Ночная операция',
         price: 9.99,
+        category: 'premium',
         description: 'Всё для тактических ночных рейдов — темные и дорогие скины с шансом на нож.',
         showcase: [
             { name: 'M4A1-S | Printstream', wear: 'Field-Tested' },
@@ -99,6 +110,7 @@ const rawCases = [
         id: 'ancient-treasures',
         name: 'Древние сокровища',
         price: 3.99,
+        category: 'featured',
         description: 'Доступный кейс с фокусом на окупаемость за счёт редких предметов из древних коллекций.',
         showcase: [
             { name: 'AK-47 | Legion of Anubis', wear: 'Field-Tested' },
@@ -124,6 +136,7 @@ const rawCases = [
         id: 'budget-rush',
         name: 'Бюджетный прорыв',
         price: 1.89,
+        category: 'budget',
         description: 'Идеальный кейс для старта — много дешёвых дропов и шанс на редкие апгрейды.',
         showcase: [
             { name: 'AK-47 | Slate', wear: 'Field-Tested' },
@@ -149,6 +162,7 @@ const rawCases = [
         id: 'knife-express',
         name: 'Ножевой экспресс',
         price: 49.99,
+        category: 'premium',
         description: 'Максимальные шансы на ножи и топовые covert-предметы. Лучшее для хайроллеров.',
         showcase: [
             { name: '★ Karambit | Gamma Doppler', wear: 'Factory New' },
@@ -174,6 +188,7 @@ const rawCases = [
         id: 'awp-sanctum',
         name: 'AWP: Святилище',
         price: 12.49,
+        category: 'awp',
         description: 'Коллекция из культовых AWP — от легендарного Dragon Lore до бюджетного Mortis.',
         showcase: [
             { name: 'AWP | Dragon Lore', wear: 'Factory New' },
@@ -199,6 +214,7 @@ const rawCases = [
         id: 'deagle-syndicate',
         name: 'Синдикат Deagle',
         price: 7.79,
+        category: 'pistol',
         description: 'Только Desert Eagle — от легендарного Blaze до доступного Oxide Blaze.',
         showcase: [
             { name: 'Desert Eagle | Blaze', wear: 'Factory New' },
@@ -226,6 +242,7 @@ const rawCases = [
         id: 'usp-blacksite',
         name: 'Черный сектор USP',
         price: 5.89,
+        category: 'pistol',
         description: 'Коллекция для ценителей USP-S: редкие неонуары и бюджетные варианты.',
         showcase: [
             { name: 'USP-S | Kill Confirmed', wear: 'Field-Tested' },
@@ -253,6 +270,7 @@ const rawCases = [
         id: 'farm-gold',
         name: 'Фарм кейс: Золотая охота',
         price: 2.59,
+        category: 'farm',
         description: 'Один шанс на золотой нож и гора ширпа для фарма контрактов.',
         showcase: [
             { name: '★ Butterfly Knife | Lore', wear: 'Field-Tested' },
@@ -273,6 +291,7 @@ const rawCases = [
         id: 'farm-emerald',
         name: 'Фарм кейс: Изумрудный миф',
         price: 3.19,
+        category: 'farm',
         description: 'Мизерный шанс на изумрудный карамбит и куча дешёвых пушек для апгрейдов.',
         showcase: [
             { name: '★ Karambit | Gamma Doppler', wear: 'Factory New' },
@@ -325,11 +344,19 @@ const selectors = {
     closeModal: document.getElementById('closeModal'),
     depositBtn: document.getElementById('depositBtn'),
     heroDeposit: document.getElementById('heroDeposit'),
+    depositModal: document.getElementById('depositModal'),
+    depositForm: document.getElementById('depositForm'),
+    depositAmount: document.getElementById('depositAmount'),
+    depositError: document.getElementById('depositError'),
+    closeDeposit: document.getElementById('closeDeposit'),
+    depositCancel: document.getElementById('depositCancel'),
+    filterButtons: Array.from(document.querySelectorAll('.case-filters [data-filter]')),
 };
 
 let currentBalance = Number(localStorage.getItem('cs2-case-balance')) || 150.00;
 let inventory = JSON.parse(localStorage.getItem('cs2-case-inventory') || '[]');
 let legacyInventoryMigrated = false;
+let activeFilter = 'all';
 inventory = inventory.map((item) => {
     const fullName = item.fullName || (item.wear ? `${item.name} (${item.wear})` : item.name);
     const needsImageRefresh = !item.image || /csgostash|skin_sideview/.test(item.image);
@@ -358,6 +385,20 @@ function saveState() {
     localStorage.setItem('cs2-case-inventory', JSON.stringify(inventory));
 }
 
+function isHidden(element) {
+    return !element || element.classList.contains('hidden');
+}
+
+function showOverlay() {
+    selectors.overlay.classList.remove('hidden');
+}
+
+function hideOverlayIfIdle() {
+    if (isHidden(selectors.caseModal) && isHidden(selectors.depositModal)) {
+        selectors.overlay.classList.add('hidden');
+    }
+}
+
 function updateBalanceDisplay() {
     selectors.balance.textContent = formatCurrency(currentBalance);
 }
@@ -371,10 +412,20 @@ function updateInventorySummary() {
 function createCaseCard(caseData) {
     const card = document.createElement('article');
     card.className = 'case-card';
+    card.dataset.category = caseData.category;
 
     const header = document.createElement('div');
     header.className = 'case-header';
-    header.innerHTML = `<h3>${caseData.name}</h3>`;
+    const title = document.createElement('h3');
+    title.textContent = caseData.name;
+    header.appendChild(title);
+
+    if (categoryLabels[caseData.category]) {
+        const badge = document.createElement('span');
+        badge.className = 'case-category';
+        badge.textContent = categoryLabels[caseData.category];
+        header.appendChild(badge);
+    }
 
     const meta = document.createElement('div');
     meta.className = 'case-meta';
@@ -408,9 +459,34 @@ function createCaseCard(caseData) {
 
 function renderCases() {
     selectors.caseList.innerHTML = '';
-    cases.forEach((caseData) => {
+    const filteredCases = activeFilter === 'all'
+        ? cases
+        : cases.filter((caseData) => caseData.category === activeFilter);
+
+    if (!filteredCases.length) {
+        selectors.caseList.classList.add('empty');
+        selectors.caseList.innerHTML = `
+            <div class="empty-cases">
+                <h3>Нет кейсов в этой категории</h3>
+                <p>Попробуйте выбрать другой фильтр или вернуться позже.</p>
+            </div>
+        `;
+        return;
+    }
+
+    selectors.caseList.classList.remove('empty');
+
+    filteredCases.forEach((caseData) => {
         selectors.caseList.appendChild(createCaseCard(caseData));
     });
+}
+
+function setActiveFilter(filter) {
+    activeFilter = filter;
+    selectors.filterButtons.forEach((button) => {
+        button.classList.toggle('active', button.dataset.filter === filter);
+    });
+    renderCases();
 }
 
 function renderInventory() {
@@ -473,14 +549,14 @@ function openCaseModal(caseData) {
     populateCaseSkins(caseData);
     populateRoulette(caseData);
     selectors.caseModal.classList.remove('hidden');
-    selectors.overlay.classList.remove('hidden');
+    showOverlay();
     selectors.caseModal.setAttribute('aria-hidden', 'false');
 }
 
 function closeCaseModal() {
     if (isSpinning) return;
     selectors.caseModal.classList.add('hidden');
-    selectors.overlay.classList.add('hidden');
+    hideOverlayIfIdle();
     selectors.caseModal.setAttribute('aria-hidden', 'true');
     activeCase = null;
 }
@@ -607,28 +683,121 @@ function addToInventory(skin) {
     renderInventory();
 }
 
-function handleDeposit() {
-    const input = prompt('Введите сумму пополнения (USD):', '50');
-    if (!input) return;
-    const amount = Number(input);
-    if (Number.isNaN(amount) || amount <= 0) {
-        alert('Введите корректную сумму.');
+function clearDepositError() {
+    if (selectors.depositError) {
+        selectors.depositError.textContent = '';
+    }
+    if (selectors.depositAmount) {
+        selectors.depositAmount.setAttribute('aria-invalid', 'false');
+        const group = selectors.depositAmount.closest('.deposit-input-group');
+        if (group) {
+            group.classList.remove('has-error');
+        }
+    }
+}
+
+function showDepositError(message) {
+    if (selectors.depositError) {
+        selectors.depositError.textContent = message;
+    }
+    if (selectors.depositAmount) {
+        selectors.depositAmount.setAttribute('aria-invalid', 'true');
+        const group = selectors.depositAmount.closest('.deposit-input-group');
+        if (group) {
+            group.classList.add('has-error');
+        }
+        selectors.depositAmount.focus();
+    }
+}
+
+function resetDepositForm() {
+    if (selectors.depositForm) {
+        selectors.depositForm.reset();
+    }
+    clearDepositError();
+}
+
+function openDepositModal() {
+    if (!selectors.depositModal) return;
+    resetDepositForm();
+    selectors.depositModal.classList.remove('hidden');
+    selectors.depositModal.setAttribute('aria-hidden', 'false');
+    showOverlay();
+    if (selectors.depositAmount) {
+        requestAnimationFrame(() => selectors.depositAmount.focus());
+    }
+}
+
+function closeDepositModal() {
+    if (!selectors.depositModal) return;
+    selectors.depositModal.classList.add('hidden');
+    selectors.depositModal.setAttribute('aria-hidden', 'true');
+    hideOverlayIfIdle();
+    resetDepositForm();
+}
+
+function handleDepositSubmit(event) {
+    event.preventDefault();
+    if (!selectors.depositAmount) return;
+    const rawValue = selectors.depositAmount.value.trim().replace(/\s+/g, '').replace(/,/g, '.');
+    if (!rawValue) {
+        showDepositError('Введите сумму пополнения.');
         return;
     }
+    const amount = Number.parseFloat(rawValue);
+    if (!Number.isFinite(amount) || amount <= 0) {
+        showDepositError('Укажите сумму больше нуля.');
+        return;
+    }
+    if (amount > 10000) {
+        showDepositError('Максимум $10 000 за одно пополнение.');
+        return;
+    }
+    clearDepositError();
     currentBalance += amount;
     updateBalanceDisplay();
     saveState();
+    closeDepositModal();
 }
 
 function registerEvents() {
     selectors.closeModal.addEventListener('click', closeCaseModal);
-    selectors.overlay.addEventListener('click', closeCaseModal);
+    selectors.overlay.addEventListener('click', () => {
+        if (!isHidden(selectors.depositModal)) {
+            closeDepositModal();
+        }
+        if (!isHidden(selectors.caseModal)) {
+            closeCaseModal();
+        }
+    });
     selectors.openCaseBtn.addEventListener('click', spinRoulette);
-    selectors.depositBtn.addEventListener('click', handleDeposit);
-    selectors.heroDeposit.addEventListener('click', handleDeposit);
+    selectors.depositBtn.addEventListener('click', openDepositModal);
+    selectors.heroDeposit.addEventListener('click', openDepositModal);
+    if (selectors.closeDeposit) {
+        selectors.closeDeposit.addEventListener('click', closeDepositModal);
+    }
+    if (selectors.depositCancel) {
+        selectors.depositCancel.addEventListener('click', closeDepositModal);
+    }
+    if (selectors.depositForm) {
+        selectors.depositForm.addEventListener('submit', handleDepositSubmit);
+    }
+    if (selectors.depositAmount) {
+        selectors.depositAmount.addEventListener('input', clearDepositError);
+    }
+    selectors.filterButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            const filterValue = button.dataset.filter || 'all';
+            setActiveFilter(filterValue);
+        });
+    });
     window.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') {
-            closeCaseModal();
+            if (!isHidden(selectors.depositModal)) {
+                closeDepositModal();
+            } else {
+                closeCaseModal();
+            }
         }
     });
 }
@@ -643,7 +812,7 @@ function init() {
     updateBalanceDisplay();
     updateInventorySummary();
     renderInventory();
-    renderCases();
+    setActiveFilter(activeFilter);
     registerEvents();
 }
 
