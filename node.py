@@ -37,7 +37,7 @@ proxy = {
 }
 
 try:
-    r = curl_requests.post(
+    response = curl_requests.post(
         url_checkin,
         headers=headers,
         json=payload,
@@ -45,16 +45,17 @@ try:
         proxies=proxy,
         impersonate="chrome120",
     )
-    print(f"Status /checkin: {r.status_code}")
-    r = r.json()
+    print(f"Status /checkin: {response.status_code}")
+    response_json = response.json()
     print("Полученные данные: ")
-    print(f"IP: {r['destinations'][0]}")
-    print(f"TOKEN: {r['token']}")
+    print(f"IP: {response_json['destinations'][0]}")
+    print(f"TOKEN: {response_json['token']}")
 except Exception as e:
     print(f"Ошибка прохождения /checkin: {e}")
+    raise SystemExit(1)
 
-ip_websockets = r['destinations'][0]
-TOKEN = r['token']
+ip_websockets = response_json['destinations'][0]
+TOKEN = response_json['token']
 
 
 # АСИНХРОННЫЙ ЗАПРОС
