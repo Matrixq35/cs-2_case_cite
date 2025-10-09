@@ -104,7 +104,7 @@ async def main_websockets_connect():
             # Используем curl_cffi для WebSocket с прокси
             async with WebSocket(
                 url,
-                proxy=proxy_url,  # Указываем прокси здесь
+                http_proxy=proxy_url,  # Указываем прокси здесь в поддерживаемом параметре
                 impersonate="chrome120",  # имитация браузера (опционально, но полезно)
                 timeout=10
             ) as ws:
