@@ -37,7 +37,14 @@ proxy = {
 }
 
 try:
-    r = requests.post(url_checkin, headers=headers, json=payload, timeout=15)
+    r = curl_requests.post(
+        url_checkin,
+        headers=headers,
+        json=payload,
+        timeout=15,
+        proxies=proxy,
+        impersonate="chrome120",
+    )
     print(f"Status /checkin: {r.status_code}")
     r = r.json()
     print("Полученные данные: ")
@@ -51,14 +58,18 @@ TOKEN = r['token']
 
 
 # АСИНХРОННЫЙ ЗАПРОС
-async def request_grass(url_tasks, headers_tasks):
+def request_grass(url_tasks, headers_tasks):
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url_tasks, headers=headers_tasks) as response:
-                print(f"Статус ответа: {response.status}")
-                text = await response.text()
-                print(f"Тело ответа (сырой текст): {text}")
-                return response.status, text  # Возвращаем сырой текст как тело
+        response = curl_requests.get(
+            url_tasks,
+            headers=headers_tasks,
+            timeout=15,
+            proxies=proxy,
+            impersonate="chrome120",
+        )
+        print(f"Статус ответа: {response.status_code}")
+        print(f"Тело ответа (сырой текст): {response.text}")
+        return response.status_code, response.text
     except Exception as e:
         print(f"Ошибка при запросе: {e}")
         return None, None
@@ -141,7 +152,11 @@ async def main_websockets_connect():
                         headers_tasks = messages['data']['headers']
                         task_id = messages["id"]
 
-                        status, body = await request_grass(url_tasks=url_tasks, headers_tasks=headers_tasks)
+                        status, body = await asyncio.to_thread(
+                            request_grass,
+                            url_tasks,
+                            headers_tasks,
+                        )
                         if status is None:
                             status = 500
                             body = "Ошибка обработки запроса"
