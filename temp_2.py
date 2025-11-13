@@ -4,6 +4,8 @@ import time
 from collections import defaultdict
 from datetime import datetime
 import json
+from json import JSONDecodeError
+
 
 class AsyncDuck:
     def __init__(self, authorization, account_name="Account"):
@@ -174,41 +176,45 @@ class AsyncDuck:
 
 
 async def run_account(authorization, account_name, mode, slots=None, max_cost=16):
-    """Запуск одного аккаунта"""
+    """Запуск логики одного аккаунта"""
     duck = AsyncDuck(authorization, account_name)
-    
-    async with aiohttp.ClientSession() as session:
-        try:
+
+    try:
+        async with aiohttp.ClientSession() as session:
             if mode == "merge":
-                await duck.find_and_merge_eggs(session, slots, queue=1)
+                while True:
+                    try:
+                        if not slots:
+                            duck.log("⚠️ Слоты для объединения не указаны. Ожидаем настройки...")
+                            await asyncio.sleep(30)
+                            continue
+
+                        await duck.find_and_merge_eggs(session, slots, queue=1)
+                        await asyncio.sleep(30)
+                    except Exception as e:
+                        duck.log(f"❌ Ошибка при объединении: {e}")
+                        await asyncio.sleep(5)
+
             elif mode == "feed":
-                ducks = await duck.get_count_ducks(session)
-                duck.log(f"Найдено уток: {len(ducks)}")
-                
-                for duck_obj in ducks:
-                    await duck.feed_duck_smart(session, duck_obj['id'], max_cost)
-        except Exception as e:
-            duck.log(f"❌ Критическая ошибка: {e}")
+                while True:
+                    try:
+                        ducks = await duck.get_count_ducks(session)
+                        duck.log(f"Найдено уток: {len(ducks)}")
 
+                        if not ducks:
+                            duck.log("⚠️ У аккаунта нет уток. Повторная проверка через минуту")
+                            await asyncio.sleep(60)
+                            continue
 
-async def run_multiple_accounts(accounts, mode, slots=None, max_cost=16):
-    """Запуск нескольких аккаунтов параллельно"""
-    tasks = []
-    
-    for account in accounts:
-        task = asyncio.create_task(
-            run_account(
-                authorization=account['token'],
-                account_name=account['name'],
-                mode=mode,
-                slots=slots,
-                max_cost=max_cost
-            )
-        )
-        tasks.append(task)
-    
-    # Ждем завершения всех задач
-    await asyncio.gather(*tasks)
+                        for duck_obj in ducks:
+                            await duck.feed_duck_smart(session, duck_obj['id'], max_cost)
+                        await asyncio.sleep(5)
+                    except Exception as e:
+                        duck.log(f"❌ Критическая ошибка: {e}")
+                        await asyncio.sleep(5)
+    except asyncio.CancelledError:
+        duck.log("🛑 Остановка фарма по запросу")
+        raise
 
 
 def load_accounts_from_file(filename="accounts.json"):
@@ -219,6 +225,127 @@ def load_accounts_from_file(filename="accounts.json"):
     except FileNotFoundError:
         print(f"❌ Файл {filename} не найден!")
         return []
+    except JSONDecodeError as exc:
+        print(f"❌ Ошибка чтения {filename}: {exc}")
+        return []
+
+
+class AccountFarmManager:
+    """Менеджер, отслеживающий изменения списка аккаунтов"""
+
+    def __init__(self, mode, slots=None, max_cost=16, filename="accounts.json", poll_interval=10):
+        self.mode = mode
+        self.slots = slots
+        self.max_cost = max_cost
+        self.filename = filename
+        self.poll_interval = poll_interval
+
+        self._tasks = {}
+        self._accounts_meta = {}
+
+    async def run(self):
+        try:
+            await self._sync_accounts(initial=True)
+            while True:
+                await asyncio.sleep(self.poll_interval)
+                await self._sync_accounts()
+        finally:
+            await self.stop_all()
+
+    async def stop_all(self):
+        for token in list(self._tasks.keys()):
+            await self._cancel_task(token, reason="Остановка менеджера")
+
+    async def _sync_accounts(self, initial=False):
+        accounts_raw = load_accounts_from_file(self.filename)
+        prepared_accounts = {}
+
+        for idx, raw_account in enumerate(accounts_raw, start=1):
+            token = raw_account.get("token")
+            if not token:
+                print(f"⚠️ Запись #{idx} в {self.filename} не содержит token и будет пропущена")
+                continue
+
+            if token in prepared_accounts:
+                print(f"⚠️ Дубликат токена в {self.filename} (запись #{idx}), используем первую запись")
+                continue
+
+            name = raw_account.get("name") or f"Account_{idx}"
+            prepared_accounts[token] = {"token": token, "name": name}
+
+        # Останавливаем задачи для удаленных аккаунтов
+        for token in list(self._tasks.keys()):
+            if token not in prepared_accounts:
+                await self._cancel_task(token, reason="Аккаунт удален из списка — останавливаем фарм")
+
+        # Запускаем новые аккаунты
+        for token, account in prepared_accounts.items():
+            if token not in self._tasks:
+                self._start_task(account)
+            else:
+                # Обновление имени, если изменилось
+                stored_meta = self._accounts_meta.get(token, {})
+                if account["name"] != stored_meta.get("name"):
+                    self._accounts_meta[token]["name"] = account["name"]
+                    print(f"[{account['name']}] ℹ️ Имя аккаунта обновлено")
+
+        self._cleanup_finished_tasks()
+
+        if initial and not self._tasks:
+            print("⚠️ Нет активных аккаунтов для запуска. Добавьте их в accounts.json.")
+
+    def _start_task(self, account):
+        name = account["name"]
+        print(f"[{name}] ▶️ Запуск фарма")
+
+        task = asyncio.create_task(
+            run_account(
+                authorization=account["token"],
+                account_name=name,
+                mode=self.mode,
+                slots=self.slots,
+                max_cost=self.max_cost
+            ),
+            name=f"account::{name}"
+        )
+
+        self._tasks[account["token"]] = task
+        self._accounts_meta[account["token"]] = {"name": name}
+
+    async def _cancel_task(self, token, reason):
+        task = self._tasks.pop(token, None)
+        meta = self._accounts_meta.pop(token, {})
+        name = meta.get("name", "Account")
+
+        if task is None:
+            return
+
+        print(f"[{name}] ⏹ {reason}")
+        task.cancel()
+
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+        except Exception as exc:
+            print(f"[{name}] ⚠️ Ошибка при остановке: {exc}")
+
+    def _cleanup_finished_tasks(self):
+        for token, task in list(self._tasks.items()):
+            if task.done():
+                meta = self._accounts_meta.get(token, {})
+                name = meta.get("name", "Account")
+
+                try:
+                    task.result()
+                    print(f"[{name}] ✅ Задача завершилась")
+                except asyncio.CancelledError:
+                    print(f"[{name}] ⏹ Задача остановлена")
+                except Exception as exc:
+                    print(f"[{name}] ⚠️ Задача завершилась с ошибкой: {exc}")
+
+                self._tasks.pop(token, None)
+                self._accounts_meta.pop(token, None)
 
 
 def create_sample_accounts_file():
@@ -267,27 +394,33 @@ def main_menu():
         print("\n👋 До свидания!")
         return
     
-    # Загружаем аккаунты
+    # Загружаем аккаунты (для информации)
     accounts = load_accounts_from_file("accounts.json")
-    
-    if not accounts:
-        print("\n⚠️ Нет аккаунтов для работы!")
-        print("Создайте файл accounts.json по примеру accounts_sample.json")
-        print("Или выберите опцию 3 для создания примера")
-        return
-    
     print(f"\n✓ Загружено аккаунтов: {len(accounts)}")
+
+    if not accounts:
+        print("\n⚠️ Пока нет аккаунтов для работы. Добавьте их в accounts.json — менеджер запустится и будет ждать обновлений.")
     
     if choice == "1":
-        print("\n🥚 Запуск режима объединения яиц для всех аккаунтов...\n")
+        print("\n🥚 Запуск режима объединения яиц. Программа будет отслеживать изменения accounts.json\n")
         slots = [7, 8, 9, 12, 13, 14, 18, 19]
-        asyncio.run(run_multiple_accounts(accounts, mode="merge", slots=slots))
-        
+        manager = AccountFarmManager(mode="merge", slots=slots)
+
+        try:
+            asyncio.run(manager.run())
+        except KeyboardInterrupt:
+            print("\n👋 Режим объединения остановлен пользователем")
+
     elif choice == "2":
-        print("\n🦆 Запуск режима умного кормления для всех аккаунтов...\n")
+        print("\n🦆 Запуск режима умного кормления. Программа будет отслеживать изменения accounts.json\n")
         max_cost = int(input("Введите максимальную стоимость кормления (по умолчанию 16): ") or "16")
-        asyncio.run(run_multiple_accounts(accounts, mode="feed", max_cost=max_cost))
-        
+        manager = AccountFarmManager(mode="feed", max_cost=max_cost)
+
+        try:
+            asyncio.run(manager.run())
+        except KeyboardInterrupt:
+            print("\n👋 Режим кормления остановлен пользователем")
+
     else:
         print("\n❌ Неверный выбор!")
 
